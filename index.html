@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>ASTRA AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            astra: {
+              bg: '#0b0f17',
+              card: '#151c28',
+              sidebar: '#0d131e',
+              border: '#1e293b',
+              accent: '#2563eb',
+              accentHover: '#1d4ed8',
+              text: '#f8fafc',
+              muted: '#94a3b8'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Mobile Height Adjustment for Android Keyboards */
+    body {
+      height: 100dvh;
+      overflow: hidden;
+      background-color: #0b0f17;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    /* Markdown Styles */
+    .prose p { margin-bottom: 0.75rem; line-height: 1.6; }
+    .prose pre { background: #090d14; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.5rem 0; border: 1px solid #1e293b; }
+    .prose code { background: rgba(255,255,255,0.1); padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.875em; }
+    .prose pre code { background: transparent; padding: 0; }
+    .prose ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .prose ol { list-style-type: decimal; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body class="flex flex-col h-full bg-astra-bg text-astra-text antialiased">
+
+  <!-- Mobile Overlay Backdrop -->
+  <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-30 hidden transition-opacity"></div>
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-4 py-3 border-b border-astra-border bg-astra-bg z-20 shrink-0">
+    <div class="flex items-center gap-3">
+      <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-astra-card text-astra-muted hover:text-white transition-colors" aria-label="Toggle Sidebar">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-lg tracking-wider text-blue-500">ASTRA<span class="text-white">.AI</span></span>
+      </div>
+    </div>
+    
+    <button onclick="createNewChat()" class="p-2 rounded-lg bg-astra-accent/20 text-astra-accent hover:bg-astra-accent/30 text-xs font-semibold flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Baru
+    </button>
+  </header>
+
+  <!-- Main Container -->
+  <div class="flex flex-1 overflow-hidden relative">
+
+    <!-- Sidebar History -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-72 bg-astra-sidebar border-r border-astra-border transform -translate-x-full transition-transform duration-200 ease-in-out flex flex-col">
+      <div class="p-4 border-b border-astra-border flex justify-between items-center">
+        <h2 class="font-semibold text-sm text-astra-muted uppercase tracking-wider">Riwayat Percakapan</h2>
+        <button onclick="toggleSidebar()" class="text-astra-muted hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div id="history-list" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+        <!-- History items loaded via JS -->
+      </div>
+
+      <div class="p-3 border-t border-astra-border text-xs text-astra-muted text-center">
+        ASTRA AI v1.0 • Power Edition
+      </div>
+    </aside>
+
+    <!-- Chat Area -->
+    <main class="flex-1 flex flex-col h-full w-full relative overflow-hidden">
+      
+      <!-- Messages List -->
+      <div id="chat-box" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="h-full flex flex-col items-center justify-center text-center p-6 space-y-4 max-w-md mx-auto">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-white mb-1">ASTRA AI</h1>
+            <p class="text-sm text-astra-muted">Asisten AI cerdas berkecepatan tinggi dan penalaran presisi.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Form Box -->
+      <div class="p-3 border-t border-astra-border bg-astra-bg shrink-0">
+        <div class="max-w-3xl mx-auto space-y-2">
+          
+          <!-- DeepThink Feature Toggle -->
+          <div class="flex items-center gap-2">
+            <button id="deepthink-btn" onclick="toggleDeepThink()" class="text-xs px-3 py-1.5 rounded-full border border-astra-border bg-astra-card text-astra-muted flex items-center gap-1.5 transition-all">
+              <span id="deepthink-dot" class="w-2 h-2 rounded-full bg-gray-500"></span>
+              <span>DeepThink</span>
+            </button>
+            <span class="text-[10px] text-astra-muted">Penalaran mendalam untuk tugas kompleks</span>
+          </div>
+
+          <!-- Textarea & Send Button -->
+          <form id="chat-form" onsubmit="handleSend(event)" class="relative flex items-center bg-astra-card border border-astra-border rounded-xl focus-within:border-astra-accent transition-colors">
+            <textarea
+              id="user-input"
+              rows="1"
+              placeholder="Tanyakan sesuatu pada ASTRA..."
+              class="w-full bg-transparent px-4 py-3 text-sm text-white focus:outline-none resize-none max-h-32 custom-scrollbar"
+              onkeydown="handleKeyDown(event)"></textarea>
+            
+            <button
+              type="submit"
+              id="send-btn"
+              class="mr-2 p-2 rounded-lg bg-astra-accent hover:bg-astra-accentHover text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9-7-9-7-9 7 9 7zm0 0v-8"/></svg>
+            </button>
+          </form>
+          
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- JavaScript App Logic -->
+  <script>
+    let currentSessionId = Date.now().toString();
+    let sessions = JSON.parse(localStorage.getItem('astra_sessions') || '{}');
+    let isDeepThink = false;
+    let isProcessing = false;
+
+    // Elements
+    const chatBox = document.getElementById('chat-box');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const historyList = document.getElementById('history-list');
+
+    // Auto resize input
+    userInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
+    function toggleDeepThink() {
+      isDeepThink = !isDeepThink;
+      const btn = document.getElementById('deepthink-btn');
+      const dot = document.getElementById('deepthink-dot');
+      
+      if (isDeepThink) {
+        btn.classList.add('border-blue-500', 'text-blue-400', 'bg-blue-950/30');
+        dot.classList.remove('bg-gray-500');
+        dot.classList.add('bg-blue-400');
+      } else {
+        btn.classList.remove('border-blue-500', 'text-blue-400', 'bg-blue-950/30');
+        dot.classList.remove('bg-blue-400');
+        dot.classList.add('bg-gray-500');
+      }
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend(e);
+      }
+    }
+
+    function createNewChat() {
+      currentSessionId = Date.now().toString();
+      renderChat();
+      if (!document.getElementById('sidebar').classList.contains('-translate-x-full')) {
+        toggleSidebar();
+      }
+    }
+
+    function saveSession(messages) {
+      sessions[currentSessionId] = {
+        id: currentSessionId,
+        title: messages[0]?.content.substring(0, 30) || 'Percakapan Baru',
+        messages: messages,
+        updatedAt: Date.now()
+      };
+      localStorage.setItem('astra_sessions', JSON.stringify(sessions));
+      renderHistory();
+    }
+
+    function getMessages() {
+      return sessions[currentSessionId]?.messages || [];
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = '';
+      const sorted = Object.values(sessions).sort((a,b) => b.updatedAt - a.updatedAt);
+      
+      sorted.forEach(s => {
+        const item = document.createElement('div');
+        item.className = `p-2.5 rounded-lg text-sm cursor-pointer flex justify-between items-center gap-2 ${s.id === currentSessionId ? 'bg-astra-card text-white font-medium border border-astra-border' : 'text-astra-muted hover:bg-astra-card/50'}`;
+        item.onclick = () => {
+          currentSessionId = s.id;
+          renderChat();
+          toggleSidebar();
+        };
+        
+        item.innerHTML = `
+          <span class="truncate flex-1">${escapeHtml(s.title)}</span>
+          <button onclick="deleteSession(event, '${s.id}')" class="opacity-60 hover:opacity-100 hover:text-red-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        `;
+        historyList.appendChild(item);
+      });
+    }
+
+    function deleteSession(e, id) {
+      e.stopPropagation();
+      delete sessions[id];
+      localStorage.setItem('astra_sessions', JSON.stringify(sessions));
+      if (currentSessionId === id) {
+        createNewChat();
+      } else {
+        renderHistory();
+      }
+    }
+
+    function renderChat() {
+      const messages = getMessages();
+      chatBox.innerHTML = '';
+
+      if (messages.length === 0) {
+        chatBox.appendChild(welcomeScreen);
+        return;
+      }
+
+      messages.forEach(msg => {
+        appendMessageUI(msg.role, msg.content);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendMessageUI(role, content) {
+      const isUser = role === 'user';
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'} w-full`;
+
+      const bubble = document.createElement('div');
+      bubble.className = `max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
+        isUser 
+          ? 'bg-astra-accent text-white rounded-br-none' 
+          : 'bg-astra-card text-astra-text border border-astra-border rounded-bl-none prose prose-invert'
+      }`;
+
+      if (isUser) {
+        bubble.textContent = content;
+      } else {
+        bubble.innerHTML = marked.parse(content);
+      }
+
+      msgDiv.appendChild(bubble);
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return bubble;
+    }
+
+    async function handleSend(e) {
+      e.preventDefault();
+      const text = userInput.value.trim();
+      if (!text || isProcessing) return;
+
+      isProcessing = true;
+      userInput.value = '';
+      userInput.style.height = 'auto';
+      sendBtn.disabled = true;
+
+      const currentMessages = getMessages();
+      currentMessages.push({ role: 'user', content: text });
+      
+      if (welcomeScreen.parentNode === chatBox) {
+        chatBox.removeChild(welcomeScreen);
+      }
+
+      appendMessageUI('user', text);
+      saveSession(currentMessages);
+
+      // Loading Indicator Bubble
+      const loadingBubble = appendMessageUI('assistant', '<i>Sedang berpikir...</i>');
+
+      try {
+        const response = await fetch('/.netlify/functions/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: currentMessages,
+            deepthink: isDeepThink
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Gagal menghubungi server');
+        }
+
+        const reply = data.reply;
+        loadingBubble.innerHTML = marked.parse(reply);
+        currentMessages.push({ role: 'assistant', content: reply });
+        saveSession(currentMessages);
+
+      } catch (err) {
+        loadingBubble.innerHTML = `<span class="text-red-400">Error: ${escapeHtml(err.message)}</span>`;
+      } finally {
+        isProcessing = false;
+        sendBtn.disabled = false;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    // Init
+    renderHistory();
+  </script>
+</body>
+                </html>
+                                                                                  
